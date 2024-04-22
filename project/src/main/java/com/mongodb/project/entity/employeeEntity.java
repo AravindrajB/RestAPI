@@ -2,13 +2,26 @@ package com.mongodb.project.entity;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import jakarta.annotation.Nonnull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
+//@JsonInclude(value = Include.NON_NULL)
 @Document(collection = "RestAPI")
 public class employeeEntity {
-
+	
+	@Valid
+	
 	@Id
 	private int emp_id;
+	@NotNull(message = "emp_name is mandatory")
+	@NotBlank (message = "emp_name is madatory")
 	private String emp_name;
+//	@Size(min = 2 , max = 5 , message = "size 2 - 5")
 	private String emp_role;
 	private long emp_salary;
 	private boolean status;

@@ -1,19 +1,18 @@
 package com.mongodb.project.service;
 
 import java.util.List;
-import java.util.Optional;
 
+import java.util.Optional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
-
 import com.mongodb.project.entity.employeeEntity;
 
 @Service
 public interface employeeService {
 
-	public String addEmployee(employeeEntity entity);
+	public String addEmployee(@RequestBody employeeEntity entity);
 
 	public List<employeeEntity> getAllEmployee();
 
