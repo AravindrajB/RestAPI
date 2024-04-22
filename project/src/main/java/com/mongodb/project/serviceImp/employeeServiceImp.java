@@ -23,7 +23,6 @@ public class employeeServiceImp implements employeeService {
 	@Autowired
 	private employeeRepo employeerepo;
 
-	@PostMapping("/addEmployee")
 	@Override
 	public String addEmployee(@RequestBody employeeEntity entity) {
 
@@ -40,7 +39,6 @@ public class employeeServiceImp implements employeeService {
 
 	}
 
-	@GetMapping("/getAllEmployee")
 	@Override
 	public List<employeeEntity> getAllEmployee() {
 
@@ -50,7 +48,6 @@ public class employeeServiceImp implements employeeService {
 
 	}
 
-	@GetMapping("/getEmployee/{emp_id}")
 	@Override
 	public Optional<employeeEntity> getEmployee(int emp_id) {
 
@@ -59,7 +56,6 @@ public class employeeServiceImp implements employeeService {
 		return employee;
 	}
 
-	@PutMapping("/updateEmployee/{emp_id}")
 	@Override
 	public ResponseEntity<String> updateEmployee(int emp_id, employeeEntity entity) {
 
@@ -83,7 +79,6 @@ public class employeeServiceImp implements employeeService {
 
 	}
 
-	@DeleteMapping("/removeEmployee/{emp_id}")
 	@Override
 	public ResponseEntity<String> removeEmployee(int emp_id) {
 
