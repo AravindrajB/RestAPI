@@ -1,97 +1,160 @@
 package com.mongodb.project.serviceImp;
 
+import java.util.ArrayList;
 import java.util.List;
-
 import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
-
+import com.mongodb.project.dto.employeeDto;
 import com.mongodb.project.entity.employeeEntity;
 import com.mongodb.project.repository.employeeRepo;
 import com.mongodb.project.service.employeeService;
 
-
 @Service
 public class employeeServiceImp implements employeeService {
+
+//	private static final Logger logger = LoggerFactory.getLogger(employeeServiceImp.class);
 
 	@Autowired
 	private employeeRepo employeerepo;
 
+	// POST - ADD EMPLOYEE
 	@Override
-	public String addEmployee(@RequestBody employeeEntity entity) {
+	public employeeDto addEmployee(final employeeDto employeeDto) {
 
-		employeeEntity result = employeerepo.save(entity);
+		employeeDto resultDto = new employeeDto();
 
-		if (result != null) {
+		employeeEntity getEmpByEmpId = employeerepo.findByEmpId(employeeDto.getEmpId());
 
-			return "New Record Added";
+		employeeEntity result = new employeeEntity();
+
+		// Validation
+
+		if (getEmpByEmpId == null) {
+
+			result.setEmpId(employeeDto.getEmpId());
+			result.setEmpName(employeeDto.getEmpName());
+			result.setEmpRole(employeeDto.getEmpRole());
+			result.setEmpSalary(employeeDto.getEmpSalary());
+			employeerepo.save(result);
+			resultDto.setStatus(0); // No error
+			resultDto.setMsg("Employee Saved Suceessfully");
 
 		} else {
 
-			return "Record not Added";
+			resultDto.setStatus(1); // has error
+			String currentId = employeeDto.getEmpId();
+			resultDto.setMsg("Employee ID:" + currentId + " is Already Exists");
 		}
 
+		return resultDto;
 	}
 
+	// GET - ALL EMPLOYEE
 	@Override
-	public List<employeeEntity> getAllEmployee() {
+	public List<employeeDto> getAllEmployee() {
 
-		List<employeeEntity> allEmployee = employeerepo.findAll();
+		List<employeeEntity> employeeEntity = employeerepo.findAll();
+		List<employeeDto> employeeDto = new ArrayList<employeeDto>();
+		for (employeeEntity employee : employeeEntity) {
+			employeeDto.add(this.getemployeeDto(employee));
+		}
 
-		return allEmployee;
+		return employeeDto;
 
 	}
 
-	@Override
-	public Optional<employeeEntity> getEmployee(int emp_id) {
+	private employeeDto getemployeeDto(employeeEntity employee) {
 
-		Optional<employeeEntity> employee = employeerepo.findById(emp_id);
+		employeeDto employeeDto = new employeeDto();
+		employeeDto.setId(employee.getId());
+		employeeDto.setEmpId(employee.getEmpId());
+		employeeDto.setEmpName(employee.getEmpName());
+		employeeDto.setEmpRole(employee.getEmpRole());
+		employeeDto.setEmpSalary(employee.getEmpSalary());
 
-		return employee;
+		return employeeDto;
 	}
 
+	// GET - SPECIFIC EMPLOYEE
 	@Override
-	public ResponseEntity<String> updateEmployee(int emp_id, @RequestBody employeeEntity entity) {
+	public employeeDto getEmployee(final String Id) {
 
-		Optional<employeeEntity> result = employeerepo.findById(emp_id);
+		Optional<employeeEntity> byId = employeerepo.findById(Id);
+		employeeDto resultDto = new employeeDto();
 
-		if (result.isPresent()) {
+		if (byId.isPresent() && !byId.isEmpty() && byId != null) {
 
-			employeeEntity empEntity = result.get();
-			empEntity.setEmp_name(entity.getEmp_name());
-			empEntity.setEmp_role(entity.getEmp_role());
-			empEntity.setEmp_salary(entity.getEmp_salary());
-			empEntity.setStatus(entity.isStatus());
-			employeerepo.save(empEntity);
-
-			return ResponseEntity.status(HttpStatus.OK).body("Record Updated");
+			resultDto.setId(Id);
+			resultDto.setEmpId(byId.get().getEmpId());
+			resultDto.setEmpName(byId.get().getEmpName());
+			resultDto.setEmpRole(byId.get().getEmpRole());
+			resultDto.setEmpSalary(byId.get().getEmpSalary());
+			resultDto.setStatus(0); // Found
 
 		} else {
 
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Record Not Found");
+			resultDto.setStatus(1); // Not Found
+			resultDto.setMsg("This EmpId is " + Id + " not found");
+
 		}
+
+		return resultDto;
 
 	}
 
+	// PUT - UPDATE EMPLOYEE
 	@Override
-	public ResponseEntity<String> removeEmployee(int emp_id) {
+	public employeeDto updateEmployee(final employeeDto employeeDto, final String Id) {
 
-		Optional<employeeEntity> employee = employeerepo.findById(emp_id);
+		Optional<employeeEntity> result = employeerepo.findById(Id);
 
-		if (employee.isPresent()) {
+		employeeDto resultDto = new employeeDto();
 
-			employeerepo.deleteById(emp_id);
+		if (result.isPresent() && !result.isEmpty() && result != null) {
 
-			return ResponseEntity.status(HttpStatus.OK).body("Record Deleted");
+			employeeEntity employeeEntity = result.get();
+			employeeEntity.setEmpId(employeeDto.getEmpId());
+			employeeEntity.setEmpName(employeeDto.getEmpName());
+			employeeEntity.setEmpRole(employeeDto.getEmpRole());
+			employeeEntity.setEmpSalary(employeeDto.getEmpSalary());
+			employeerepo.save(employeeEntity);
+			resultDto.setStatus(0); // Record Updated
+			resultDto.setMsg("Record Updated: " + Id);
 
 		} else {
 
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Record Not Found");
+			resultDto.setStatus(1); // Record Not Found
+			resultDto.setMsg("Record Not In DB: " + Id);
+
 		}
+
+		return resultDto;
+
+	}
+
+	// DEL - REMOVE EMPLOYEE
+	@Override
+	public employeeDto removeEmployee(final String Id) {
+
+		Optional<employeeEntity> employee = employeerepo.findById(Id);
+
+		employeeDto resultDto = new employeeDto();
+
+		if (employee.isPresent() && !employee.isEmpty() && employee != null) {
+
+			employeerepo.deleteById(Id);
+
+			resultDto.setStatus(0); // Deleted
+			resultDto.setMsg("This " + Id + " is Deleted.");
+
+		} else {
+
+			resultDto.setStatus(1); // Record Not Found
+			resultDto.setMsg("This " + Id + " is Not Found.");
+		}
+
+		return resultDto;
 
 	}
 

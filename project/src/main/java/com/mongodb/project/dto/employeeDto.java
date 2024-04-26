@@ -1,20 +1,19 @@
-package com.mongodb.project.entity;
+package com.mongodb.project.dto;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 @JsonInclude(value = Include.NON_NULL)
-@Document(collection = "RestAPI")
-public class employeeEntity {
+public class employeeDto {
 
-	@Id
 	private String id;
 	private String empId;
 	private String empName;
 	private String empRole;
+	@JsonInclude(value = Include.NON_DEFAULT)
 	private long empSalary;
+	private int status;
+	private String msg;
 
 	public String getId() {
 		return id;
@@ -56,5 +55,20 @@ public class employeeEntity {
 		this.empSalary = empSalary;
 	}
 
+	public int getStatus() {
+		return status;
+	}
+
+	public void setStatus(int status) {
+		this.status = status;
+	}
+
+	public String getMsg() {
+		return msg;
+	}
+
+	public void setMsg(String msg) {
+		this.msg = msg;
+	}
 
 }
