@@ -4,6 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import com.mongodb.project.dto.employeeDto;
 import com.mongodb.project.entity.employeeEntity;
@@ -18,33 +23,61 @@ public class employeeServiceImp implements employeeService {
 	@Autowired
 	private employeeRepo employeerepo;
 
+	@Autowired
+	private MongoTemplate mongoTemp;
+
 	// POST - ADD EMPLOYEE
 	@Override
-	public employeeDto addEmployee(final employeeDto employeeDto) {
+	public employeeDto addEmployee(final employeeDto employeeDto) throws Exception {
 
 		employeeDto resultDto = new employeeDto();
 
-		employeeEntity getEmpByEmpId = employeerepo.findByEmpId(employeeDto.getEmpId());
+		try {
+			employeeEntity getEmpByEmpId = employeerepo.findByEmpId(employeeDto.getEmpId());
 
-		employeeEntity result = new employeeEntity();
+			employeeEntity result = new employeeEntity();
 
-		// Validation
+			// Validation
 
-		if (getEmpByEmpId == null) {
+			if (getEmpByEmpId == null) {
 
-			result.setEmpId(employeeDto.getEmpId());
-			result.setEmpName(employeeDto.getEmpName());
-			result.setEmpRole(employeeDto.getEmpRole());
-			result.setEmpSalary(employeeDto.getEmpSalary());
-			employeerepo.save(result);
-			resultDto.setStatus(0); // No error
-			resultDto.setMsg("Employee Saved Suceessfully");
+				if (!employeeDto.getEmpId().isEmpty() && employeeDto.getEmpId() != null
+						&& !employeeDto.getEmpName().isEmpty() && employeeDto.getEmpName() != null) {
 
-		} else {
+					result.setEmpId(employeeDto.getEmpId());
+					result.setEmpName(employeeDto.getEmpName());
+					result.setEmpRole(employeeDto.getEmpRole());
+					result.setEmpSalary(employeeDto.getEmpSalary());
+					employeerepo.save(result);
+					resultDto.setStatus(0); // No error
+					resultDto.setMsg("Employee ID: " + employeeDto.getEmpId() + " Saved Suceessfully");
+
+				} else {
+
+					resultDto.setStatus(1); // has error
+					resultDto.setMsg("EmpId & EmpName is mandatory!");
+				}
+
+			} else {
+
+				resultDto.setStatus(1); // has error
+				String currentId = employeeDto.getEmpId();
+				resultDto.setMsg("Employee ID:" + currentId + " is Already Exists");
+
+			}
+
+		}
+
+		catch (NullPointerException e) {
+			resultDto.setStatus(1);
+			resultDto.setMsg("EmpId & EmpName is should be not null");
+
+		}
+
+		catch (Exception e) {
 
 			resultDto.setStatus(1); // has error
-			String currentId = employeeDto.getEmpId();
-			resultDto.setMsg("Employee ID:" + currentId + " is Already Exists");
+			resultDto.setMsg(e.getMessage());
 		}
 
 		return resultDto;
@@ -52,7 +85,7 @@ public class employeeServiceImp implements employeeService {
 
 	// GET - ALL EMPLOYEE
 	@Override
-	public List<employeeDto> getAllEmployee() {
+	public List<employeeDto> getAllEmployee() throws Exception {
 
 		List<employeeEntity> employeeEntity = employeerepo.findAll();
 		List<employeeDto> employeeDto = new ArrayList<employeeDto>();
@@ -64,7 +97,7 @@ public class employeeServiceImp implements employeeService {
 
 	}
 
-	private employeeDto getemployeeDto(employeeEntity employee) {
+	private employeeDto getemployeeDto(employeeEntity employee) throws Exception {
 
 		employeeDto employeeDto = new employeeDto();
 		employeeDto.setId(employee.getId());
@@ -78,7 +111,7 @@ public class employeeServiceImp implements employeeService {
 
 	// GET - SPECIFIC EMPLOYEE
 	@Override
-	public employeeDto getEmployee(final String Id) {
+	public employeeDto getEmployee(final String Id) throws Exception {
 
 		Optional<employeeEntity> byId = employeerepo.findById(Id);
 		employeeDto resultDto = new employeeDto();
@@ -105,7 +138,7 @@ public class employeeServiceImp implements employeeService {
 
 	// PUT - UPDATE EMPLOYEE
 	@Override
-	public employeeDto updateEmployee(final employeeDto employeeDto, final String Id) {
+	public employeeDto updateEmployee(final employeeDto employeeDto, final String Id) throws Exception {
 
 		Optional<employeeEntity> result = employeerepo.findById(Id);
 
@@ -135,7 +168,7 @@ public class employeeServiceImp implements employeeService {
 
 	// DEL - REMOVE EMPLOYEE
 	@Override
-	public employeeDto removeEmployee(final String Id) {
+	public employeeDto removeEmployee(final String Id) throws Exception {
 
 		Optional<employeeEntity> employee = employeerepo.findById(Id);
 
@@ -156,6 +189,55 @@ public class employeeServiceImp implements employeeService {
 
 		return resultDto;
 
+	}
+
+	@Override
+	public List<employeeDto> searchUser(final String keyword) throws Exception {
+
+		Criteria criteria = new Criteria();
+//		    criteria.orOperator(
+//		        Criteria.where("empRole").regex("(?i).*" + keyword + ".*"),
+//		        Criteria.where("empName").regex("(?i).*" + keyword + ".*"),
+//		        Criteria.where("empSalary").regex("(?i).*" + keyword + ".*")
+//		        // Add more criteria for other fields as needed
+//		    );
+
+//		    AggregationOperation match = Aggregation.match(Criteria.where("empRole").regex("(?i).*" + keyword + ".*"));
+//
+//  		AggregationOperation match = Aggregation.match(criteria);
+//		    Aggregation aggregation = Aggregation.newAggregation(match);
+
+		Query query = new Query();
+		query.addCriteria(criteria.orOperator(Criteria.where("empRole").regex("(?i).*" + keyword + ".*"),
+				Criteria.where("empId").regex("(?i).*" + keyword + ".*")));
+
+		List<employeeEntity> employeeList = mongoTemp.find(query, employeeEntity.class);
+
+//		    		mongoTemp.aggregate(aggregation, 
+//		    		"RestAPI", employeeEntity.class).getMappedResults();
+
+		List<employeeDto> resultDto = new ArrayList<>();
+		for (employeeEntity employee : employeeList) {
+			resultDto.add(this.getemployeeDto(employee));
+		}
+
+		return resultDto;
+
+	}
+
+	@Override
+	public List<employeeDto> searchUserByDynamicField(String field, String key) throws Exception {
+		
+		Criteria criteria = new Criteria();
+		Query query = new Query();
+		query.addCriteria(criteria.orOperator(Criteria.where(field).regex("(?i).*" + key + ".*")));
+		List<employeeEntity> employeeList = mongoTemp.find(query, employeeEntity.class);
+		List<employeeDto> resultDto = new ArrayList<>();
+		for (employeeEntity employee : employeeList) {
+			resultDto.add(this.getemployeeDto(employee));
+		}
+
+		return resultDto;
 	}
 
 }
